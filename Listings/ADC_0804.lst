@@ -1,0 +1,136 @@
+C51 COMPILER V9.56.0.0   ADC_0804                                                          12/13/2018 15:15:44 PAGE 1   
+
+
+C51 COMPILER V9.56.0.0, COMPILATION OF MODULE ADC_0804
+OBJECT MODULE PLACED IN .\Objects\ADC_0804.obj
+COMPILER INVOKED BY: C:\KEIL\C51\BIN\C51.EXE ADC_0804.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\ADC
+                    -_0804.lst) TABS(2) OBJECT(.\Objects\ADC_0804.obj)
+
+line level    source
+
+   1          #include <reg51.h>
+   2          #define adc_data P2
+   3          
+   4          ///////////////////////////////Define variables
+   5          int x, digit0,digit1,digit2;
+   6          float y,adc_value;
+   7          float temp;
+   8          
+   9          ///////////////////////////////////Define pins for ADC0804
+  10          sbit rd=P1^5;
+  11          sbit wr=P1^6;
+  12          sbit intr=P1^7;
+  13          ////////////////////////////////////Message
+  14          
+  15          unsigned char mesg1[]="Temperature is=";
+  16          
+  17          /////////////////////////////////// Function for creating delay in milliseconds.
+  18          void delay(unsigned int time)  
+  19          {
+  20   1          unsigned i,j ;
+  21   1          for(i=0;i<time;i++)    
+  22   1          for(j=0;j<1275;j++);
+  23   1      }
+  24          ///////////////////////////////////// Function to initialize serial communication
+  25          void initialize_serial()  
+  26            { 
+  27   1        TMOD=0x20;  //use Timer 1, 8 bit ,auto reload
+  28   1        TH1=0xFD;   //9600 baudrate
+  29   1        SCON=0x50;
+  30   1        TR1=1;     //start timer
+  31   1        TI=1;
+  32   1        }
+  33          ////////////////////////////////////Function to transmit data_
+  34          void transmit(unsigned char cmd)
+  35            {
+  36   1         while(TI==0);
+  37   1         SBUF=cmd;
+  38   1         TI=0;
+  39   1        }
+  40          //////////////////////////////Function to initialize ADC
+  41            
+  42            void init_adc()
+  43            {
+  44   1          adc_data=0xFF;          /////////initialised adc pin as input 
+  45   1          rd=0;                   ////////initialised as output
+  46   1          wr=0;                   /////////initialised as output
+  47   1          intr=1;                 ////////initialised as input              
+  48   1        }
+  49            
+  50          ////////////////////////////////////Function to read ADC value
+  51            
+  52          unsigned char read_adc()
+  53            {    
+  54   1          unsigned char value=0;
+C51 COMPILER V9.56.0.0   ADC_0804                                                          12/13/2018 15:15:44 PAGE 2   
+
+  55   1          rd=1;
+  56   1          wr=0;     //////start conversion
+  57   1          delay(7);
+  58   1          wr=1;   
+  59   1          while(intr==1);  ////wait untill end of conversion
+  60   1          rd=0;
+  61   1          value=adc_data; 
+  62   1          return value;                
+  63   1        }
+  64                         
+  65          /////////////////////////////////////Convert ASCII to to hex function
+  66            
+  67          void convert_ascii(float val)
+  68           {
+  69   1       unsigned int r,g;
+  70   1       g=val;
+  71   1       digit2=g/100;
+  72   1       digit2=digit2|0x30;
+  73   1       r=g%100;
+  74   1       digit1=r/10;
+  75   1       digit1=digit1|0x30;
+  76   1       digit0=r%10;
+  77   1       digit0=digit0|0x30;
+  78   1       }
+  79           
+  80          ///////////////////////////////////*********************Main function*****************************////////
+             -//////////////////
+  81           
+  82          void main()
+  83          {
+  84   1        unsigned char x;
+  85   1        initialize_serial();
+  86   1        init_adc();
+  87   1        while(1)
+  88   1        {
+  89   2          init_adc();
+  90   2          initialize_serial();
+  91   2          adc_value=0;      
+  92   2          adc_value=read_adc();             /////Read adc value
+  93   2          adc_value=(19.53*adc_value);  /////Conversion of bit value to voltage (mV)
+  94   2          adc_value=adc_value/10;           /////conversion formula-Voltage to temperature
+  95   2          for(x=0;x<=15;x++)
+  96   2          {
+  97   3            transmit(mesg1[x]);
+  98   3          }
+  99   2          convert_ascii(adc_value);     ///////conversion of ADC value to ASCII
+ 100   2          transmit(digit2); 
+ 101   2          transmit(digit1);
+ 102   2          transmit(digit0);
+ 103   2          transmit('C');
+ 104   2          transmit(0x0D);               ///////To start new line 
+ 105   2          delay(100);
+ 106   2        }
+ 107   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    297    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     36    ----
+C51 COMPILER V9.56.0.0   ADC_0804                                                          12/13/2018 15:15:44 PAGE 3   
+
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
